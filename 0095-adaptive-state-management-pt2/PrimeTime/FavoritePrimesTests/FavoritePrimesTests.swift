@@ -1,5 +1,15 @@
 import XCTest
 @testable import FavoritePrimes
+import ComposableArchitecture
+
+extension FileClient {
+  static let mock = FileClient(
+    load: { _ in Effect<Data?>.sync {
+      try! JSONEncoder().encode([2, 31])
+      } },
+    save: { _, _ in .fireAndForget {} }
+  )
+}
 
 class FavoritePrimesTests: XCTestCase {
   func testDeleteFavoritePrimes() {

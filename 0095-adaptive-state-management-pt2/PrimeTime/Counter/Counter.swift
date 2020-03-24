@@ -22,7 +22,15 @@ public enum CounterAction: Equatable {
   case primeModalDismissed
 }
 
-public typealias CounterEnvironment = (Int) -> Effect<Int?>
+public struct CounterEnvironment {
+  let nthPrime: (Int) -> Effect<Int?>
+  
+  public init(nthPrime: @escaping (Int) -> Effect<Int?>) {
+    self.nthPrime = nthPrime
+  }
+  
+  var empty: Void { () }
+}
 
 public func counterReducer(
   state: inout CounterState,
@@ -42,7 +50,7 @@ public func counterReducer(
     state.isNthPrimeRequestInFlight = true
     let n = state.count
     return [
-      environment(state.count)
+      environment.nthPrime(state.count)
         .map { CounterAction.nthPrimeResponse(n: n, prime: $0) }
         .receive(on: DispatchQueue.main)
         .eraseToEffect()
@@ -72,13 +80,13 @@ public let counterViewReducer: Reducer<CounterFeatureState, CounterFeatureAction
     counterReducer,
     value: \CounterFeatureState.counter,
     action: /CounterFeatureAction.counter,
-    environment: { $0 }
+    environment: \.self
   ),
   pullback(
     primeModalReducer,
     value: \.primeModal,
     action: /CounterFeatureAction.primeModal,
-    environment: { _ in () }
+    environment: \.empty
   )
 )
 

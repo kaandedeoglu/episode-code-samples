@@ -18,10 +18,16 @@ public enum FavoritePrimesAction: Equatable {
   case alertDismissButtonTapped
 }
 
-public typealias FavoritePrimesEnvironment = (
-  fileClient: FileClient,
-  nthPrime: (Int) -> Effect<Int?>
-)
+
+public struct FavoritePrimesEnvironment {
+  var fileClient: FileClient
+  var nthPrime: (Int) -> Effect<Int?>
+  
+  public init(fileClient: FileClient, nthPrime: @escaping (Int) -> Effect<Int?>) {
+    self.fileClient = fileClient
+    self.nthPrime = nthPrime
+  }
+}
 
 public func favoritePrimesReducer(
   state: inout FavoritePrimesState,

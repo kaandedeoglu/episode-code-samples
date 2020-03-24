@@ -12,8 +12,8 @@ PlaygroundPage.current.liveView = UIHostingController(
         favoritePrimes: [],
         isNthPrimeRequestInFlight: false
       ),
-      reducer: logging(counterViewReducer),
-      environment: { _ in .sync { 7236893748932 } }
+      reducer: counterViewReducer,
+      environment: CounterEnvironment(nthPrime: { _ in .sync { 7236893748932 }} )
     )
   )
 )

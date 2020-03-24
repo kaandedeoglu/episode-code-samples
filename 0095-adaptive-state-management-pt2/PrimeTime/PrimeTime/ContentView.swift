@@ -48,7 +48,7 @@ extension AppState {
     }
   }
 
-  var counterView: CounterFeatureState {
+  var counterFeatureState: CounterFeatureState {
     get {
       CounterFeatureState(
         alertNthPrime: self.alertNthPrime,
@@ -68,35 +68,43 @@ extension AppState {
   }
 }
 
-//struct AppEnvironment {
-//  var counter: CounterEnvironment
-//  var favoritePrimes: FavoritePrimesEnvironment
-//}
+class AppEnvironment {
+    lazy var fileClient: FileClient = FileClient.live
+    lazy var wolframNthPrime: (Int) -> Effect<Int?> = Counter.nthPrime
+    lazy var offlineNthPrime: (Int) -> Effect<Int?> = Counter.offlineNthPrime
+}
 
-typealias AppEnvironment = (
-  fileClient: FileClient,
-  nthPrime: (Int) -> Effect<Int?>,
-  offlineNthPrime: (Int) -> Effect<Int?>
-)
+extension AppEnvironment {
+  var favoritePrimes: FavoritePrimesEnvironment {
+    FavoritePrimesEnvironment(fileClient: fileClient, nthPrime: wolframNthPrime)
+  }
+  
+  var counterWolframEnvironment: CounterEnvironment {
+    CounterEnvironment(nthPrime: wolframNthPrime)
+  }
+  var counterOfflineEnvironment: CounterEnvironment {
+    CounterEnvironment(nthPrime: offlineNthPrime)
+  }
+}
 
 let appReducer: Reducer<AppState, AppAction, AppEnvironment> = combine(
   pullback(
     counterViewReducer,
-    value: \AppState.counterView,
+    value: \AppState.counterFeatureState,
     action: /AppAction.counterView,
-    environment: { $0.nthPrime }
+    environment: \.counterWolframEnvironment
   ),
   pullback(
     counterViewReducer,
-    value: \AppState.counterView,
+    value: \AppState.counterFeatureState,
     action: /AppAction.offlineCounterView,
-    environment: { $0.offlineNthPrime }
+    environment: \.counterOfflineEnvironment
   ),
   pullback(
     favoritePrimesReducer,
     value: \.favoritePrimesState,
     action: /AppAction.favoritePrimes,
-    environment: { ($0.fileClient, $0.nthPrime) }
+    environment: \.favoritePrimes
   )
 )
 
@@ -153,7 +161,7 @@ struct ContentView: View {
             "Counter demo",
             destination: CounterView(
               store: self.store.scope(
-                value: { $0.counterView },
+                value: { $0.counterFeatureState },
                 action: { .counterView($0) }
               )
             )
@@ -163,7 +171,7 @@ struct ContentView: View {
             "Offline counter demo",
             destination: CounterView(
               store: self.store.scope(
-                value: { $0.counterView },
+                value: { $0.counterFeatureState },
                 action: { .offlineCounterView($0) }
               )
             )

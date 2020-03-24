@@ -8,8 +8,7 @@ public func combine<Value, Action, Environment>(
   _ reducers: Reducer<Value, Action, Environment>...
 ) -> Reducer<Value, Action, Environment> {
   return { value, action, environment in
-    let effects = reducers.flatMap { $0(&value, action, environment) }
-    return effects
+    return reducers.flatMap { $0(&value, action, environment) }
   }
 }
 
@@ -17,11 +16,11 @@ public func pullback<LocalValue, GlobalValue, LocalAction, GlobalAction, LocalEn
   _ reducer: @escaping Reducer<LocalValue, LocalAction, LocalEnvironment>,
   value: WritableKeyPath<GlobalValue, LocalValue>,
   action: CasePath<GlobalAction, LocalAction>,
-  environment: @escaping (GlobalEnvironment) -> LocalEnvironment
+  environment: KeyPath<GlobalEnvironment, LocalEnvironment>
 ) -> Reducer<GlobalValue, GlobalAction, GlobalEnvironment> {
   return { globalValue, globalAction, globalEnvironment in
     guard let localAction = action.extract(from: globalAction) else { return [] }
-    let localEffects = reducer(&globalValue[keyPath: value], localAction, environment(globalEnvironment))
+    let localEffects = reducer(&globalValue[keyPath: value], localAction, globalEnvironment[keyPath: environment])
 
     return localEffects.map { localEffect in
       localEffect.map(action.embed)
@@ -70,7 +69,7 @@ extension Store {
       .removeDuplicates(by: predicate)
       .sink(receiveValue: { [weak viewStore] value in
         viewStore?.value = value
-        self
+        _ = self
       })
     
     return viewStore
@@ -130,7 +129,6 @@ public final class Store<Value, Action> /*: ObservableObject */ {
     )
     localStore.viewCancellable = self.$value
       .map(toLocalValue)
-//      .removeDuplicates()
       .sink { [weak localStore] newValue in
         localStore?.value = newValue
       }

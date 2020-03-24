@@ -6,9 +6,14 @@ import SnapshotTesting
 import SwiftUI
 import XCTest
 
+let counterEnvironmentConstant17 = CounterEnvironment(nthPrime: { _ in .sync { 17 } })
+let counterEnvironmentNil = CounterEnvironment(nthPrime: { _ in .sync { nil } })
+
 class CounterTests: XCTestCase {
   func testSnapshots() {
-    let store = Store(initialValue: CounterFeatureState(), reducer: counterViewReducer, environment: { _ in .sync { 17 } })
+    let store = Store(initialValue: CounterFeatureState(),
+                      reducer: counterViewReducer,
+                      environment: counterEnvironmentConstant17)
     let view = CounterView(store: store)
 
     let vc = UIHostingController(rootView: view)
@@ -54,7 +59,7 @@ class CounterTests: XCTestCase {
     assert(
       initialValue: CounterFeatureState(count: 2),
       reducer: counterViewReducer,
-      environment: { _ in .sync { 17 } },
+      environment: counterEnvironmentConstant17,
       steps:
       Step(.send, .counter(.incrTapped)) { $0.count = 3 },
       Step(.send, .counter(.incrTapped)) { $0.count = 4 },
@@ -70,7 +75,7 @@ class CounterTests: XCTestCase {
         isNthPrimeRequestInFlight: false
       ),
       reducer: counterViewReducer,
-      environment: { _ in .sync { 17 } },
+      environment: counterEnvironmentConstant17,
       steps:
       Step(.send, .counter(.nthPrimeButtonTapped)) {
         $0.isNthPrimeRequestInFlight = true
@@ -93,7 +98,7 @@ class CounterTests: XCTestCase {
         isNthPrimeRequestInFlight: false
       ),
       reducer: counterViewReducer,
-      environment: { _ in .sync { nil } },
+      environment: counterEnvironmentNil,
       steps:
       Step(.send, .counter(.nthPrimeButtonTapped)) {
         $0.isNthPrimeRequestInFlight = true
@@ -111,7 +116,7 @@ class CounterTests: XCTestCase {
         favoritePrimes: [3, 5]
       ),
       reducer: counterViewReducer,
-      environment: { _ in .sync { 17 } },
+      environment: counterEnvironmentConstant17,
       steps:
       Step(.send, .counter(.incrTapped)) {
         $0.count = 2
