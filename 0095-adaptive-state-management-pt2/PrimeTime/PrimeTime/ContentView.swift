@@ -9,7 +9,6 @@ import SwiftUI
 struct AppState: Equatable {
   var count = 0
   var favoritePrimes: [Int] = []
-  var loggedInUser: User? = nil
   var activityFeed: [Activity] = []
   var alertNthPrime: PrimeAlert? = nil
   var isNthPrimeRequestInFlight: Bool = false
@@ -23,12 +22,6 @@ struct AppState: Equatable {
       case addedFavoritePrime(Int)
       case removedFavoritePrime(Int)
     }
-  }
-
-  struct User: Equatable {
-    let id: Int
-    let name: String
-    let bio: String
   }
 }
 
@@ -69,9 +62,9 @@ extension AppState {
 }
 
 class AppEnvironment {
-    lazy var fileClient: FileClient = FileClient.live
-    lazy var wolframNthPrime: (Int) -> Effect<Int?> = Counter.nthPrime
-    lazy var offlineNthPrime: (Int) -> Effect<Int?> = Counter.offlineNthPrime
+  lazy var fileClient: FileClient = FileClient.live
+  lazy var wolframNthPrime: (Int) -> Effect<Int?> = Counter.nthPrime
+  lazy var offlineNthPrime: (Int) -> Effect<Int?> = Counter.offlineNthPrime
 }
 
 extension AppEnvironment {
@@ -79,10 +72,11 @@ extension AppEnvironment {
     FavoritePrimesEnvironment(fileClient: fileClient, nthPrime: wolframNthPrime)
   }
   
-  var counterWolframEnvironment: CounterEnvironment {
+  var counterWolfram: CounterEnvironment {
     CounterEnvironment(nthPrime: wolframNthPrime)
   }
-  var counterOfflineEnvironment: CounterEnvironment {
+  
+  var counterOffline: CounterEnvironment {
     CounterEnvironment(nthPrime: offlineNthPrime)
   }
 }
@@ -92,19 +86,19 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = combine(
     counterViewReducer,
     value: \AppState.counterFeatureState,
     action: /AppAction.counterView,
-    environment: \.counterWolframEnvironment
+    environment: \AppEnvironment.counterWolfram
   ),
   pullback(
     counterViewReducer,
     value: \AppState.counterFeatureState,
     action: /AppAction.offlineCounterView,
-    environment: \.counterOfflineEnvironment
+    environment: \AppEnvironment.counterOffline
   ),
   pullback(
     favoritePrimesReducer,
-    value: \.favoritePrimesState,
+    value: \AppState.favoritePrimesState,
     action: /AppAction.favoritePrimes,
-    environment: \.favoritePrimes
+    environment: \AppEnvironment.favoritePrimes
   )
 )
 
