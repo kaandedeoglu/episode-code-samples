@@ -4,6 +4,7 @@ import PrimeAlert
 import SwiftUI
 
 public typealias FavoritePrimesState = (
+  isNthPrimeRequestInFlight: Bool,
   alertNthPrime: PrimeAlert?,
   favoritePrimes: [Int]
 )
@@ -17,7 +18,6 @@ public enum FavoritePrimesAction: Equatable {
   case nthPrimeResponse(n: Int, prime: Int?)
   case alertDismissButtonTapped
 }
-
 
 public struct FavoritePrimesEnvironment {
   var fileClient: FileClient
@@ -63,6 +63,7 @@ public func favoritePrimesReducer(
     ]
 
   case let .primeButtonTapped(n):
+    state.isNthPrimeRequestInFlight = true
     return [
       environment.nthPrime(n)
         .map { FavoritePrimesAction.nthPrimeResponse(n: n, prime: $0) }
@@ -72,6 +73,7 @@ public func favoritePrimesReducer(
 
   case .nthPrimeResponse(let n, let prime):
     state.alertNthPrime = prime.map { PrimeAlert(n: n, prime: $0) }
+    state.isNthPrimeRequestInFlight = false
     return []
 
   case .alertDismissButtonTapped:
@@ -81,7 +83,7 @@ public func favoritePrimesReducer(
 }
 
 public struct FavoritePrimesView: View {
-  let store: Store<FavoritePrimesState, FavoritePrimesAction>
+  private let store: Store<FavoritePrimesState, FavoritePrimesAction>
   @ObservedObject var viewStore: ViewStore<FavoritePrimesState>
 
   public init(store: Store<FavoritePrimesState, FavoritePrimesAction>) {
@@ -97,6 +99,7 @@ public struct FavoritePrimesView: View {
         Button("\(prime)") {
           self.store.send(.primeButtonTapped(prime))
         }
+        .disabled(self.viewStore.value.isNthPrimeRequestInFlight)
       }
       .onDelete { indexSet in
         self.store.send(.deleteFavoritePrimes(indexSet))

@@ -14,7 +14,7 @@ extension FileClient {
 class FavoritePrimesTests: XCTestCase {
   func testDeleteFavoritePrimes() {
     let environment = FavoritePrimesEnvironment(fileClient: .mock, nthPrime: { _ in .sync { 17 } })
-    var state = FavoritePrimesState(alertNthPrime: nil, favoritePrimes: [2, 3, 5, 7])
+    var state = FavoritePrimesState(isNthPrimeRequestInFlight: false, alertNthPrime: nil, favoritePrimes: [2, 3, 5, 7])
     let effects = favoritePrimesReducer(state: &state, action: .deleteFavoritePrimes([2]), environment: environment)
 
     XCTAssertNil(state.alertNthPrime)
@@ -32,7 +32,7 @@ class FavoritePrimesTests: XCTestCase {
     }
 
     let environment = FavoritePrimesEnvironment(fileClient: fileClient, nthPrime: { _ in .sync { 17 } })
-    var state = FavoritePrimesState(alertNthPrime: nil, favoritePrimes: [2, 3, 5, 7])
+    var state = FavoritePrimesState(isNthPrimeRequestInFlight: false, alertNthPrime: nil, favoritePrimes: [2, 3, 5, 7])
     let effects = favoritePrimesReducer(state: &state, action: .saveButtonTapped, environment: environment)
 
     XCTAssertNil(state.alertNthPrime)
@@ -49,7 +49,7 @@ class FavoritePrimesTests: XCTestCase {
     fileClient.load = { _ in .sync { try! JSONEncoder().encode([2, 31]) } }
 
     let environment = FavoritePrimesEnvironment(fileClient: fileClient, nthPrime: { _ in .sync { 17 } })
-    var state = FavoritePrimesState(alertNthPrime: nil, favoritePrimes: [2, 3, 5, 7])
+    var state = FavoritePrimesState(isNthPrimeRequestInFlight: false, alertNthPrime: nil, favoritePrimes: [2, 3, 5, 7])
     var effects = favoritePrimesReducer(state: &state, action: .loadButtonTapped, environment: environment)
 
     XCTAssertNil(state.alertNthPrime)

@@ -4,6 +4,7 @@ import ComposableArchitecture
 import Counter
 import FavoritePrimes
 import PrimeAlert
+import ActivityFeed
 import SwiftUI
 
 struct AppState: Equatable {
@@ -13,31 +14,22 @@ struct AppState: Equatable {
   var alertNthPrime: PrimeAlert? = nil
   var isNthPrimeRequestInFlight: Bool = false
   var isPrimeModalShown: Bool = false
-
-  struct Activity: Equatable {
-    let timestamp: Date
-    let type: ActivityType
-
-    enum ActivityType: Equatable {
-      case addedFavoritePrime(Int)
-      case removedFavoritePrime(Int)
-    }
-  }
 }
 
 enum AppAction: Equatable {
   case counterView(CounterFeatureAction)
   case offlineCounterView(CounterFeatureAction)
   case favoritePrimes(FavoritePrimesAction)
+  case activityFeed(ActivityFeedAction)
 }
 
 extension AppState {
   var favoritePrimesState: FavoritePrimesState {
     get {
-      (self.alertNthPrime, self.favoritePrimes)
+      (self.isNthPrimeRequestInFlight, self.alertNthPrime, self.favoritePrimes)
     }
     set {
-      (self.alertNthPrime, self.favoritePrimes) = newValue
+      (self.isNthPrimeRequestInFlight, self.alertNthPrime, self.favoritePrimes) = newValue
     }
   }
 
@@ -59,6 +51,11 @@ extension AppState {
       self.isPrimeModalShown = newValue.isPrimeModalShown
     }
   }
+  
+  var activityFeedState: ActivityFeedState {
+    get { self.activityFeed }
+    set { self.activityFeed = newValue }
+  }
 }
 
 class AppEnvironment {
@@ -79,6 +76,8 @@ extension AppEnvironment {
   var counterOffline: CounterEnvironment {
     CounterEnvironment(nthPrime: offlineNthPrime)
   }
+  
+  var empty: Void { () }
 }
 
 let appReducer: Reducer<AppState, AppAction, AppEnvironment> = combine(
@@ -99,7 +98,11 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = combine(
     value: \AppState.favoritePrimesState,
     action: /AppAction.favoritePrimes,
     environment: \AppEnvironment.favoritePrimes
-  )
+  ),
+  pullback(activityFeedReducer,
+           value: \AppState.activityFeedState,
+           action: /AppAction.activityFeed,
+           environment: \.empty)
 )
 
 func activityFeed(
@@ -115,7 +118,8 @@ func activityFeed(
          .favoritePrimes(.saveButtonTapped),
          .favoritePrimes(.primeButtonTapped),
          .favoritePrimes(.nthPrimeResponse),
-         .favoritePrimes(.alertDismissButtonTapped):
+         .favoritePrimes(.alertDismissButtonTapped),
+         .activityFeed:
       break
     case .counterView(.primeModal(.removeFavoritePrimeTapped)),
          .offlineCounterView(.primeModal(.removeFavoritePrimeTapped)):
@@ -155,8 +159,8 @@ struct ContentView: View {
             "Counter demo",
             destination: CounterView(
               store: self.store.scope(
-                value: { $0.counterFeatureState },
-                action: { .counterView($0) }
+                value: \.counterFeatureState,
+                action: (/AppAction.counterView).embed
               )
             )
           )
@@ -165,8 +169,8 @@ struct ContentView: View {
             "Offline counter demo",
             destination: CounterView(
               store: self.store.scope(
-                value: { $0.counterFeatureState },
-                action: { .offlineCounterView($0) }
+                value: \.counterFeatureState,
+                action: (/AppAction.offlineCounterView).embed
               )
             )
           )
@@ -175,16 +179,21 @@ struct ContentView: View {
           "Favorite primes",
           destination: FavoritePrimesView(
             store: self.store.scope(
-              value: { $0.favoritePrimesState },
-              action: { .favoritePrimes($0) }
+              value: \.favoritePrimesState,
+              action: (/AppAction.favoritePrimes).embed
             )
           )
         )
 
-        ForEach(Array(1...500_000), id: \.self) { value in
-          Text("\(value)")
-        }
-
+        NavigationLink(
+          "Activity Feed",
+          destination: ActivityFeedView(
+            store: self.store.scope(
+              value: \.activityFeedState,
+              action: (/AppAction.activityFeed).embed
+            )
+          )
+        )
       }
       .navigationBarTitle("State management")
     }
