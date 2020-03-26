@@ -99,10 +99,12 @@ let appReducer: Reducer<AppState, AppAction, AppEnvironment> = combine(
     action: /AppAction.favoritePrimes,
     environment: \AppEnvironment.favoritePrimes
   ),
-  pullback(activityFeedReducer,
-           value: \AppState.activityFeedState,
-           action: /AppAction.activityFeed,
-           environment: \.empty)
+  pullback(
+    activityFeedReducer,
+    value: \AppState.activityFeedState,
+    action: /AppAction.activityFeed,
+    environment: \.empty
+  )
 )
 
 func activityFeed(
@@ -158,9 +160,9 @@ struct ContentView: View {
           NavigationLink(
             "Counter demo",
             destination: CounterView(
-              store: self.store.scope(
+              store: store.scope(
                 value: \.counterFeatureState,
-                action: (/AppAction.counterView).embed
+                action: AppAction.counterView
               )
             )
           )
@@ -168,9 +170,9 @@ struct ContentView: View {
           NavigationLink(
             "Offline counter demo",
             destination: CounterView(
-              store: self.store.scope(
+              store: store.scope(
                 value: \.counterFeatureState,
-                action: (/AppAction.offlineCounterView).embed
+                action: AppAction.offlineCounterView
               )
             )
           )
@@ -178,9 +180,9 @@ struct ContentView: View {
         NavigationLink(
           "Favorite primes",
           destination: FavoritePrimesView(
-            store: self.store.scope(
+            store: store.scope(
               value: \.favoritePrimesState,
-              action: (/AppAction.favoritePrimes).embed
+              action: AppAction.favoritePrimes
             )
           )
         )
@@ -188,9 +190,9 @@ struct ContentView: View {
         NavigationLink(
           "Activity Feed",
           destination: ActivityFeedView(
-            store: self.store.scope(
+            store: store.scope(
               value: \.activityFeedState,
-              action: (/AppAction.activityFeed).embed
+              action: AppAction.activityFeed
             )
           )
         )

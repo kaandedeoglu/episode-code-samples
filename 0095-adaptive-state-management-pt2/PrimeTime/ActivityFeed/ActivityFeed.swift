@@ -20,12 +20,6 @@ public struct Activity: Hashable, Identifiable {
 }
 
 extension Activity {
-  private static let formatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    return formatter
-  }()
-  
   var cellTitle: String {
     switch type {
     case let .addedFavoritePrime(prime):
@@ -36,7 +30,10 @@ extension Activity {
   }
   
   var cellSubtitle: String {
-    Activity.formatter.string(from: timestamp)
+    DateFormatter.localizedString(
+      from: timestamp,
+      dateStyle: .medium,
+      timeStyle: .medium)
   }
 }
 
